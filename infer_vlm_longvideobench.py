@@ -26,8 +26,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--result_file", "-r", type=str, default="results.jsonl")
     parser.add_argument("--model", "-m", type=str, default="/lpai/volumes/lpai-demo-muses/lt/models/Qwen2.5-VL-7B-Instruct")
-    parser.add_argument("--page_size", type=int, default=4096) # set to True if using no context (directly measuring memorization)
-    parser.add_argument("--dataset", type=str, default="/lpai/volumes/lpai-demo-muses/lt/data/LongVideoBench") # set to True if using no context (directly measuring memorization)
+    # parser.add_argument("--page_size", type=int, default=4096)
+    parser.add_argument("--dataset", type=str, default="/lpai/volumes/lpai-demo-muses/lt/data/LongVideoBench")
     args = parser.parse_args()
 
     processor = AutoProcessor.from_pretrained(args.model, trust_remote_code=True,)
@@ -47,8 +47,8 @@ if __name__ == "__main__":
     datasets = json.load(fp)
 
     for index, ele in enumerate(datasets):
-        if index < 788:
-            continue
+        # if index < 788:
+            # continue
         question = ["Question: " + ele["question"]]
         question += [". ".join([chr(ord("A")+i), candidate]) for i, candidate in enumerate(ele["candidates"])]
         question += ["Format your response as follows: 'The correct answer is ([insert answer letter here])'"]
