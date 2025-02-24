@@ -41,12 +41,14 @@ if __name__ == "__main__":
                 trust_remote_code=True,
             )
     model = model.eval()
-    # model = torch.compile(model)
+    model = torch.compile(model)
 
     fp = open(args.dataset+"/lvb_val.json")
     datasets = json.load(fp)
 
     for index, ele in enumerate(datasets):
+        if index < 788:
+            continue
         question = ["Question: " + ele["question"]]
         question += [". ".join([chr(ord("A")+i), candidate]) for i, candidate in enumerate(ele["candidates"])]
         question += ["Format your response as follows: 'The correct answer is ([insert answer letter here])'"]
@@ -81,7 +83,7 @@ if __name__ == "__main__":
         correct_choice = chr(ord("A")+ele['correct_choice'])
         print("index:", index, "output_text:", output_text, "correct_choice:", correct_choice)
         with open(args.result_file, "a", encoding="utf-8") as f:
-            json.dump({"index": index, "response": output_text, "pred": extract_answer(output_text), "judge": correct_choice==extract_answer(output_text)}, f, ensure_ascii=False)
+            json.dump({"index": index, "response": output_text, "pred": extract_answer(output_text), "correct_choice": correct_choice, "judge": correct_choice==extract_answer(output_text)}, f, ensure_ascii=False)
             f.write('\n')
 
     breakpoint()
