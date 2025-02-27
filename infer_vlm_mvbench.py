@@ -14,7 +14,7 @@ data_list = {
     "action_sequence": ("action_sequence.json", "/video/star/Charades_v1_480/", "video", True), # has start & end
     "action_prediction": ("action_prediction.json", "/video/star/Charades_v1_480/", "video", True), # has start & end
     "action_antonym": ("action_antonym.json", "/video/ssv2_video/", "video", False),
-    "fine_grained_action": ("fine_grained_action.json", "pvideo/Moments_in_Time_Raw/videos/", "video", False),
+    "fine_grained_action": ("fine_grained_action.json", "/video/Moments_in_Time_Raw/videos/", "video", False),
     "unexpected_action": ("unexpected_action.json", "/video/FunQA_test/test/", "video", False),
     "object_existence": ("object_existence.json", "/video/clevrer/video_validation/", "video", False),
     "object_interaction": ("object_interaction.json", "/video/star/Charades_v1_480/", "video", True), # has start & end
@@ -26,10 +26,10 @@ data_list = {
     "moving_count": ("moving_count.json", "/video/clevrer/video_validation/", "video", False),
     "moving_attribute": ("moving_attribute.json", "/video/clevrer/video_validation/", "video", False),
     "state_change": ("state_change.json", "/video/perception/videos/", "video", False),
-    "fine_grained_pose": ("fine_grained_pose.json", "/video/nturgbd/", "video", False),
     "character_order": ("character_order.json", "/video/perception/videos/", "video", False),
     "egocentric_navigation": ("egocentric_navigation.json", "/video/vlnqa/", "video", False),
     "counterfactual_inference": ("counterfactual_inference.json", "/video/clevrer/video_validation/", "video", False),
+    "fine_grained_pose": ("fine_grained_pose.json", "/video/nturgbd/", "video", False),
     "episodic_reasoning": ("episodic_reasoning.json", "/video/tvqa/frames_fps3_hq/", "frame", True),  # has start & end, read frame
 }
 
@@ -117,9 +117,11 @@ if __name__ == "__main__":
             output_text = processor.batch_decode(
                 generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
             )[0]
+            _, prompt_len = inputs['input_ids'].shape
+            video_len, _ = inputs['pixel_values_videos'].shape
             print("index:", index, "output_text:", output_text, "correct_choice:", answer)
             with open(data+'_'+args.result_file, "a", encoding="utf-8") as f:
-                json.dump({"index": index, "response": output_text, "pred": extract_answer(output_text), "correct_choice": answer, "judge": answer==extract_answer(output_text)}, f, ensure_ascii=False)
+                json.dump({"index": index, 'prompt_len': prompt_len, 'video_len': video_len, "response": output_text, "pred": extract_answer(output_text), "correct_choice": answer, "judge": answer==extract_answer(output_text)}, f, ensure_ascii=False)
                 f.write('\n')
 
 
