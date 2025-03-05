@@ -1,3 +1,4 @@
+import argparse
 import gc
 import json
 import re
@@ -12,7 +13,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, DynamicCache, Stat
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--result_file", "-r", type=str, default="results")
+    parser.add_argument("--result_file", "-r", type=str, default="results.jsonl")
     parser.add_argument("--model", "-m", type=str, default="/lpai/volumes/lpai-demo-muses/lt/models/Qwen2.5-7B-Instruct")
     parser.add_argument("--page_size", type=int, default=4096) # set to True if using no context (directly measuring memorization)
     args = parser.parse_args()
@@ -20,10 +21,11 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained(args.model)
     model = AutoModelForCausalLM.from_pretrained(
                 args.model,
-                attn_implementation="flash_attention_2",
+                # attn_implementation="flash_attention_2",
+                attn_implementation="sdpa",
                 torch_dtype=torch.float16,
                 # load_in_8bit=True,
-                device_map="cuda",
+                device_map="auto",
             )
     model = model.eval()
     model = torch.compile(model)
@@ -97,7 +99,7 @@ if __name__ == "__main__":
         # print("index", index, "prefill time", prefill_end - start, "decode time", end - prefill_end, "\tanswer", ele['answer'], flush=True)
         # print("response org", response, flush=True)
         # print("-------------------------------------------------------", flush=True)
-        # with open("base_result.jsonl", "a", encoding="utf-8") as f:
+        # with open(args.result_file, "a", encoding="utf-8") as f:
             # json.dump({"index": index, "response": response, "pred": extract_answer(response), "answers": ele["answer"], "judge": ele["answer"]==extract_answer(response), "length": ele["length"]}, f, ensure_ascii=False)
             # f.write('\n')
 
