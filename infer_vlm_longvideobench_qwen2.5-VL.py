@@ -24,7 +24,7 @@ def extract_answer(response):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--result_file", "-r", type=str, default="results.jsonl")
+    parser.add_argument("--result_file", "-r", type=str, default="opt_longvideobench.jsonl")
     parser.add_argument("--model", "-m", type=str, default="/lpai/volumes/lpai-demo-muses/lt/models/Qwen2.5-VL-7B-Instruct")
     # parser.add_argument("--page_size", type=int, default=4096)
     parser.add_argument("--dataset", type=str, default="/lpai/volumes/lpai-demo-muses/lt/data/LongVideoBench")
@@ -46,12 +46,17 @@ if __name__ == "__main__":
     fp = open(args.dataset+"/lvb_val.json")
     datasets = json.load(fp)
 
+    total_time = 0.
+    total_seqlen = 0
     for index, ele in enumerate(datasets):
-        # if index < 788:
+        # if index < 19:
             # continue
+        # if index == 10:
+            # break
         question = ["Question: " + ele["question"]]
         question += [". ".join([chr(ord("A")+i), candidate]) for i, candidate in enumerate(ele["candidates"])]
         question += ["Format your response as follows: 'The correct answer is ([insert answer letter here])'"]
+        # question = ["Question: descript this video"]
         messages = [
             {
                 "role": "user",
@@ -64,6 +69,7 @@ if __name__ == "__main__":
                 ],
             }
         ]
+        print("video:", args.dataset+"/videos/"+ele['video_path'])
         text = processor.apply_chat_template(messages, tokenize=False, add_generation_prompt=True)
 
         image_inputs, video_inputs, video_kwargs = process_vision_info(messages, return_video_kwargs=True)
@@ -75,17 +81,30 @@ if __name__ == "__main__":
             return_tensors="pt",
             **video_kwargs,
         ).to("cuda")
+        print("video shape:", video_inputs[0].shape)
+        print("video fps:", video_kwargs)
+        print("input len:", inputs.input_ids.shape)
+        torch.cuda.synchronize()
+        start = time.time()
         generated_ids = model.generate(**inputs, max_new_tokens=128, do_sample=False)
+        torch.cuda.synchronize()
+        end = time.time()
 
         output_text = processor.batch_decode(
             generated_ids, skip_special_tokens=True, clean_up_tokenization_spaces=False
         )[0]
         correct_choice = chr(ord("A")+ele['correct_choice'])
-        print("index:", index, "output_text:", output_text, "correct_choice:", correct_choice)
+        if index >= 2:
+            total_time += (end - start)
+            total_seqlen += inputs.input_ids.shape[1]
+        print("index:", index, "time", end - start, "output_text:", output_text, "correct_choice:", correct_choice)
         with open(args.result_file, "a", encoding="utf-8") as f:
             json.dump({"index": index, "response": output_text, "pred": extract_answer(output_text), "correct_choice": correct_choice, "judge": correct_choice==extract_answer(output_text)}, f, ensure_ascii=False)
             f.write('\n')
 
+    print("sample num:", (index-2))
+    print("avg seqlen", total_seqlen / (index-2))
+    print("avg time", total_time / (index-2))
     breakpoint()
 
 
