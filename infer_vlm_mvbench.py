@@ -11,25 +11,25 @@ from datasets import load_dataset
 from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, DynamicCache, StaticCache
 
 data_list = {
-    "action_sequence": ("action_sequence.json", "/video/star/Charades_v1_480/", "video", True), # has start & end
-    "action_prediction": ("action_prediction.json", "/video/star/Charades_v1_480/", "video", True), # has start & end
-    "action_antonym": ("action_antonym.json", "/video/ssv2_video/", "video", False),
-    "fine_grained_action": ("fine_grained_action.json", "/video/Moments_in_Time_Raw/videos/", "video", False),
-    "unexpected_action": ("unexpected_action.json", "/video/FunQA_test/test/", "video", False),
-    "object_existence": ("object_existence.json", "/video/clevrer/video_validation/", "video", False),
-    "object_interaction": ("object_interaction.json", "/video/star/Charades_v1_480/", "video", True), # has start & end
-    "object_shuffle": ("object_shuffle.json", "/video/perception/videos/", "video", False),
-    "moving_direction": ("moving_direction.json", "/video/clevrer/video_validation/", "video", False),
-    "action_localization": ("action_localization.json", "/video/sta/sta_video/", "video", True),  # has start & end
-    "scene_transition": ("scene_transition.json", "/video/scene_qa/video/", "video", False),
-    "action_count": ("action_count.json", "/video/perception/videos/", "video", False),
-    "moving_count": ("moving_count.json", "/video/clevrer/video_validation/", "video", False),
-    "moving_attribute": ("moving_attribute.json", "/video/clevrer/video_validation/", "video", False),
-    "state_change": ("state_change.json", "/video/perception/videos/", "video", False),
-    "character_order": ("character_order.json", "/video/perception/videos/", "video", False),
-    "egocentric_navigation": ("egocentric_navigation.json", "/video/vlnqa/", "video", False),
-    "counterfactual_inference": ("counterfactual_inference.json", "/video/clevrer/video_validation/", "video", False),
-    "fine_grained_pose": ("fine_grained_pose.json", "/video/nturgbd/", "video", False),
+    # "action_sequence": ("action_sequence.json", "/video/star/Charades_v1_480/", "video", True), # has start & end
+    # "action_prediction": ("action_prediction.json", "/video/star/Charades_v1_480/", "video", True), # has start & end
+    # "action_antonym": ("action_antonym.json", "/video/ssv2_video/", "video", False),
+    # "fine_grained_action": ("fine_grained_action.json", "/video/Moments_in_Time_Raw/videos/", "video", False),
+    # "unexpected_action": ("unexpected_action.json", "/video/FunQA_test/test/", "video", False),
+    # "object_existence": ("object_existence.json", "/video/clevrer/video_validation/", "video", False),
+    # "object_interaction": ("object_interaction.json", "/video/star/Charades_v1_480/", "video", True), # has start & end
+    # "object_shuffle": ("object_shuffle.json", "/video/perception/videos/", "video", False),
+    # "moving_direction": ("moving_direction.json", "/video/clevrer/video_validation/", "video", False),
+    # "action_localization": ("action_localization.json", "/video/sta/sta_video/", "video", True),  # has start & end
+    # "scene_transition": ("scene_transition.json", "/video/scene_qa/video/", "video", False),
+    # "action_count": ("action_count.json", "/video/perception/videos/", "video", False),
+    # "moving_count": ("moving_count.json", "/video/clevrer/video_validation/", "video", False),
+    # "moving_attribute": ("moving_attribute.json", "/video/clevrer/video_validation/", "video", False),
+    # "state_change": ("state_change.json", "/video/perception/videos/", "video", False),
+    # "character_order": ("character_order.json", "/video/perception/videos/", "video", False),
+    # "egocentric_navigation": ("egocentric_navigation.json", "/video/vlnqa/", "video", False),
+    # "counterfactual_inference": ("counterfactual_inference.json", "/video/clevrer/video_validation/", "video", False),
+    # "fine_grained_pose": ("fine_grained_pose.json", "/video/nturgbd/", "video", False),
     "episodic_reasoning": ("episodic_reasoning.json", "/video/tvqa/frames_fps3_hq/", "frame", True),  # has start & end, read frame
 }
 
