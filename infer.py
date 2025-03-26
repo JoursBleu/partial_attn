@@ -14,7 +14,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, DynamicCache, Stat
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--result_file", "-r", type=str, default="results.jsonl")
-    parser.add_argument("--model", "-m", type=str, default="/lpai/volumes/lpai-demo-muses/lt/models/Qwen2.5-7B-Instruct")
+    parser.add_argument("--model", "-m", type=str, default="/lpai/volumes/lpai-yharnam-bd-ga/lt/models/Qwen2.5-7B-Instruct")
     parser.add_argument("--page_size", type=int, default=4096) # set to True if using no context (directly measuring memorization)
     args = parser.parse_args()
 

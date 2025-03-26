@@ -26,9 +26,9 @@ def extract_answer(response):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--result_file", "-r", type=str, default="results.jsonl")
-    parser.add_argument("--model", "-m", type=str, default="/lpai/volumes/lpai-demo-muses/lt/models/Qwen2.5-VL-7B-Instruct")
+    parser.add_argument("--model", "-m", type=str, default="/lpai/volumes/lpai-yharnam-bd-ga/lt/models/Qwen2.5-VL-7B-Instruct")
     # parser.add_argument("--page_size", type=int, default=4096)
-    parser.add_argument("--dataset", type=str, default="/lpai/volumes/lpai-demo-muses/lt/data/LongVideoBench")
+    parser.add_argument("--dataset", type=str, default="/lpai/volumes/lpai-yharnam-bd-ga/lt/data/LongVideoBench")
     args = parser.parse_args()
 
     model = LLM(

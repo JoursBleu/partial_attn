@@ -24,7 +24,7 @@ def extract_answer(response):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--result_file", "-r", type=str, default="results.jsonl")
-    parser.add_argument("--model", "-m", type=str, default="/lpai/volumes/lpai-demo-muses/lt/models/Qwen2.5-7B-Instruct")
+    parser.add_argument("--model", "-m", type=str, default="/lpai/volumes/lpai-yharnam-bd-ga/lt/models/Qwen2.5-7B-Instruct")
     # parser.add_argument("--page_size", type=int, default=4096)
     parser.add_argument("--dataset", type=str, default="THUDM/LongBench-v2")
     parser.add_argument("--cot", type=bool, default=False, action=argparse.BooleanOptionalAction)
@@ -41,7 +41,7 @@ if __name__ == "__main__":
                 trust_remote_code=True,
             )
     model = model.eval()
-    model = torch.compile(model)
+    # model = torch.compile(model)
 
     data = load_dataset(args.dataset, split='train')
     if 'qwen' in model.config.model_type:

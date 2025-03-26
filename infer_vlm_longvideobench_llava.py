@@ -1,7 +1,6 @@
 import argparse
 import gc
 import json
-from qwen_vl_utils import process_vision_info
 import re
 import time
 import torch
@@ -25,9 +24,9 @@ def extract_answer(response):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--result_file", "-r", type=str, default="results.jsonl")
-    parser.add_argument("--model", "-m", type=str, default="/lpai/volumes/lpai-demo-muses/lt/models/LLaVA-NeXT-Video-7B-32K-hf")
+    parser.add_argument("--model", "-m", type=str, default="/lpai/volumes/lpai-yharnam-bd-ga/lt/models/LLaVA-NeXT-Video-7B-32K-hf")
     # parser.add_argument("--page_size", type=int, default=4096)
-    parser.add_argument("--dataset", type=str, default="/lpai/volumes/lpai-demo-muses/lt/data/LongVideoBench")
+    parser.add_argument("--dataset", type=str, default="/lpai/volumes/lpai-yharnam-bd-ga/lt/data/LongVideoBench")
     args = parser.parse_args()
 
     processor = LlavaNextVideoProcessor.from_pretrained(args.model, trust_remote_code=True,)
@@ -41,7 +40,7 @@ if __name__ == "__main__":
                 trust_remote_code=True,
             )
     model = model.eval()
-    model = torch.compile(model)
+    # model = torch.compile(model)
 
     fp = open(args.dataset+"/lvb_val.json")
     datasets = json.load(fp)
@@ -70,7 +69,10 @@ if __name__ == "__main__":
             tokenize=True,
             return_dict=True,
             return_tensors="pt",
+            num_frames=256,
+            video_load_backend="torchvision",
         ).to('cuda')
+        breakpoint()
 
         generated_ids = model.generate(**inputs, max_new_tokens=128, do_sample=False)
 
