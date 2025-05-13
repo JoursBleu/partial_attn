@@ -7,6 +7,7 @@ export PYTHONPATH=/lpai/volumes/lpai-yharnam-vol-ga/lt/transformers/src
 export PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True'
 
 # unset BLOCK_SIZE
+export USE_PAVLM=0
 export VIDEO_MAX_PIXELS=90316800 # (128000*28*28*0.9)
 export LENGTH=128k
 export BLOCK_SIZE=4096
