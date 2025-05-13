@@ -3,6 +3,7 @@ import gc
 import json
 from qwen_vl_utils import process_vision_info
 import re
+import os
 import time
 import torch
 import transformers
@@ -12,15 +13,28 @@ from transformers import Qwen2_5_VLForConditionalGeneration, AutoProcessor, Dyna
 
 def extract_answer(response):
     response = response.replace('*', '')
-    match = re.search(r'The correct answer is \(([A-D])\)', response)
+    match = re.search(r'The correct answer is \(([A-Z])\)', response)
     if match:
         return match.group(1)
     else:
-        match = re.search(r'The correct answer is ([A-D])', response)
+        match = re.search(r'The correct answer is ([A-Z])', response)
         if match:
             return match.group(1)
         else:
             return None
+
+def get_already_done(args):
+    if not os.path.exists(args.result_file):
+        return set()
+    fp = open(args.result_file,'r')
+    lines = fp.readlines()
+    already = set()
+    for line in lines:
+        json_line = json.loads(line)
+        index = json_line['index']
+        if index not in already:
+            already.add(index)
+    return already
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -28,6 +42,7 @@ if __name__ == "__main__":
     parser.add_argument("--model", "-m", type=str, default="/lpai/volumes/lpai-yharnam-bd-ga/lt/models/Qwen2.5-VL-7B-Instruct")
     # parser.add_argument("--page_size", type=int, default=4096)
     parser.add_argument("--dataset", type=str, default="/lpai/volumes/lpai-yharnam-bd-ga/lt/data/LongVideoBench")
+    parser.add_argument("--start_id", type=int, default=0)
     args = parser.parse_args()
 
     processor = AutoProcessor.from_pretrained(args.model, trust_remote_code=True,)
@@ -37,7 +52,7 @@ if __name__ == "__main__":
                 # attn_implementation="eager",
                 torch_dtype=torch.float16,
                 # load_in_8bit=True,
-                device_map="auto",
+                device_map="cuda",
                 trust_remote_code=True,
             )
     model = model.eval()
@@ -46,13 +61,17 @@ if __name__ == "__main__":
     fp = open(args.dataset+"/lvb_val.json")
     datasets = json.load(fp)
 
+    already = get_already_done(args)
+
     total_time = 0.
     total_seqlen = 0
     for index, ele in enumerate(datasets):
-        # if index < 19:
+        # if index < args.start_id:
             # continue
         # if index == 10:
             # break
+        if index in already:
+            continue
         question = ["Question: " + ele["question"]]
         question += [". ".join([chr(ord("A")+i), candidate]) for i, candidate in enumerate(ele["candidates"])]
         question += ["Format your response as follows: 'The correct answer is ([insert answer letter here])'"]

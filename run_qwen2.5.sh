@@ -1,23 +1,49 @@
 #!/bin/bash
 
-# export MASTER_ADDR='localhost'
-# export MASTER_PORT=17777
+set -v
 
 export MODEL=Qwen2.5-VL-7B-Instruct
-export PYTHONPATH=/lpai/volumes/lpai-yharnam-bd-ga/lt/transformers/src
-export VIDEO_MAX_PIXELS=180633600 # (256000*28*28*0.9)
-export LENGTH=256k
+export PYTHONPATH=/lpai/volumes/lpai-yharnam-vol-ga/lt/transformers/src
+export PYTORCH_CUDA_ALLOC_CONF='expandable_segments:True'
 
 # unset BLOCK_SIZE
-# export BLOCK_SIZE=2048
-# CUDA_VISIBLE_DEVICES=2,7 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model /lpai/volumes/lpai-yharnam-bd-ga/lt/models/${MODEL} --result_file temp.jsonl
-# unset BLOCK_SIZE
-# CUDA_VISIBLE_DEVICES=0,1 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model /lpai/volumes/lpai-yharnam-bd-ga/lt/models/${MODEL} --result_file ${MODEL}_${BLOCK_SIZE}_${LENGTH}.jsonl &> ${MODEL}_${BLOCK_SIZE}_${LENGTH}.log &
-export BLOCK_SIZE=2048
-CUDA_VISIBLE_DEVICES=2,3 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model /lpai/volumes/lpai-yharnam-bd-ga/lt/models/${MODEL} --result_file ${MODEL}_${BLOCK_SIZE}_${LENGTH}.jsonl &> ${MODEL}_${BLOCK_SIZE}_${LENGTH}.log &
+export VIDEO_MAX_PIXELS=90316800 # (128000*28*28*0.9)
+export LENGTH=128k
 export BLOCK_SIZE=4096
-CUDA_VISIBLE_DEVICES=4,5 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model /lpai/volumes/lpai-yharnam-bd-ga/lt/models/${MODEL} --result_file ${MODEL}_${BLOCK_SIZE}_${LENGTH}.jsonl &> ${MODEL}_${BLOCK_SIZE}_${LENGTH}.log &
+export SINK_SIZE=256
+touch ${MODEL}_${LENGTH}_${BLOCK_SIZE}_${SINK_SIZE}.jsonl
+CUDA_VISIBLE_DEVICES=7 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model ../models/${MODEL} --result_file ${MODEL}_${LENGTH}_${BLOCK_SIZE}_${SINK_SIZE}.jsonl --dataset /lpai/volumes/lpai-yharnam-vol-ga/lt/data/LongVideoBench
+
+# export VIDEO_MAX_PIXELS=90316800 # (128000*28*28*0.9)
+# export LENGTH=128k
+
+# export SINK_SIZE=256
+# export BLOCK_SIZE=1024
+# touch ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl
+# CUDA_VISIBLE_DEVICES=0 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model ../models/${MODEL} --result_file ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl --dataset /lpai/volumes/lpai-yharnam-vol-ga/lt/data/LongVideoBench &> ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.log &
+# export BLOCK_SIZE=2048
+# touch ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl
+# CUDA_VISIBLE_DEVICES=1 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model ../models/${MODEL} --result_file ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl --dataset /lpai/volumes/lpai-yharnam-vol-ga/lt/data/LongVideoBench &> ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.log &
+# export BLOCK_SIZE=4096
+# touch ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl
+# CUDA_VISIBLE_DEVICES=2 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model ../models/${MODEL} --result_file ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl --dataset /lpai/volumes/lpai-yharnam-vol-ga/lt/data/LongVideoBench &> ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.log &
 # export BLOCK_SIZE=8192
-# CUDA_VISIBLE_DEVICES=6,7 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model /lpai/volumes/lpai-yharnam-bd-ga/lt/models/${MODEL} --result_file ${MODEL}_${BLOCK_SIZE}_${LENGTH}.jsonl &> ${MODEL}_${BLOCK_SIZE}_${LENGTH}.log &
+# touch ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl
+# CUDA_VISIBLE_DEVICES=3 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model ../models/${MODEL} --result_file ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl --dataset /lpai/volumes/lpai-yharnam-vol-ga/lt/data/LongVideoBench &> ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.log &
+
+# export SINK_SIZE=512
+# export BLOCK_SIZE=1024
+# touch ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl
+# CUDA_VISIBLE_DEVICES=4 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model ../models/${MODEL} --result_file ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl --dataset /lpai/volumes/lpai-yharnam-vol-ga/lt/data/LongVideoBench &> ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.log &
+# export BLOCK_SIZE=2048
+# touch ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl
+# CUDA_VISIBLE_DEVICES=5 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model ../models/${MODEL} --result_file ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl --dataset /lpai/volumes/lpai-yharnam-vol-ga/lt/data/LongVideoBench &> ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.log &
+# export BLOCK_SIZE=4096
+# touch ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl
+# CUDA_VISIBLE_DEVICES=6 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model ../models/${MODEL} --result_file ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl --dataset /lpai/volumes/lpai-yharnam-vol-ga/lt/data/LongVideoBench &> ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.log &
+# export BLOCK_SIZE=8192
+# touch ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl
+# CUDA_VISIBLE_DEVICES=7 python3 infer_vlm_longvideobench_qwen2.5-VL.py --model ../models/${MODEL} --result_file ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.jsonl --dataset /lpai/volumes/lpai-yharnam-vol-ga/lt/data/LongVideoBench &> ${MODEL}_${BLOCK_SIZE}_${LENGTH}_${SINK_SIZE}.log &
 
 
+sleep 3600000000
