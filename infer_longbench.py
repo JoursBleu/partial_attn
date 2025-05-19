@@ -1,25 +1,42 @@
 import argparse
 import gc
 import json
+import os
 import re
 import time
 import torch
 import transformers
+from tqdm import tqdm
+from mpi4py import MPI
+
 
 from datasets import load_dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer, DynamicCache, StaticCache
 
 def extract_answer(response):
     response = response.replace('*', '')
-    match = re.search(r'The correct answer is \(([A-D])\)', response)
+    match = re.search(r'The correct answer is \(([A-G])\)', response)
     if match:
         return match.group(1)
     else:
-        match = re.search(r'The correct answer is ([A-D])', response)
+        match = re.search(r'The correct answer is ([A-G])', response)
         if match:
             return match.group(1)
         else:
             return None
+
+def get_already_done(args):
+    if not os.path.exists(args.result_file):
+        return set()
+    fp = open(args.result_file,'r')
+    lines = fp.readlines()
+    already = set()
+    for line in lines:
+        json_line = json.loads(line)
+        index = json_line['index']
+        if index not in already:
+            already.add(index)
+    return already
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -30,6 +47,11 @@ if __name__ == "__main__":
     parser.add_argument("--cot", type=bool, default=False, action=argparse.BooleanOptionalAction)
     args = parser.parse_args()
 
+    comm = MPI.COMM_WORLD
+    size = comm.Get_size()
+    rank = comm.Get_rank()
+    args.result_file = f'{rank}_' + args.result_file if size > 1 else args.result_file
+
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True,)
     model = AutoModelForCausalLM.from_pretrained(
                 args.model,
@@ -37,7 +59,7 @@ if __name__ == "__main__":
                 # attn_implementation="eager",
                 torch_dtype=torch.float16,
                 # load_in_8bit=True,
-                device_map="auto",
+                device_map=f"cuda:{rank}",
                 trust_remote_code=True,
             )
     model = model.eval()
@@ -52,7 +74,7 @@ if __name__ == "__main__":
             question += 'Let’s think step by step:\n<|im_end|>\n'
             question_post_cot = '\n<|im_start|>user\nBased on the above, what is the single, most likely answer choice? Format your response as follows: "The correct answer is (insert answer here)".\n<|im_end|>\n'
         else:
-            question += 'Format your response as follows: "The correct answer is (insert answer here)".\n<|im_end|>\n'
+            question += 'Format your response as follows: "The correct answer is (insert answer here)".\n<|im_end|>\n\n<|im_start|>assistant\n<think>\n\n</think>\n\n'
     elif 'llama' in model.config.model_type:
         system = '<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\nYou are a helpful assistant.\n\n<|eot_id|><|start_header_id|>user<|end_header_id|>\n\nPlease read the following text and answer the question below.\n\n'
         text = '<text>\n$DOC$\n</text>\n\n'
@@ -72,23 +94,29 @@ if __name__ == "__main__":
         else:
             question += 'Format your response as follows: "The correct answer is (insert answer here)".[/INST]'
 
-    system_id = tokenizer(system, return_tensors='pt').to("cuda")
+    system_id = tokenizer(system, return_tensors='pt').to(f"cuda:{rank}")
     _, system_len = system_id['input_ids'].shape
     if args.cot:
-        post_cot_id = tokenizer(question_post_cot, return_tensors="pt").to("cuda")
+        post_cot_id = tokenizer(question_post_cot, return_tensors="pt").to(f"cuda:{rank}")
 
-    max_new_tokens = 128
+    max_new_tokens = 1024
     max_cot_tokens = 1024
     max_len = 120000
 
+    already = get_already_done(args)
+
     index = 0
-    for ele in data:
+    for ele in tqdm(data):
         index += 1
+        if index % size != rank:
+            continue
         # if index < 144:
             # continue
         # if "long" not in ele["length"]:
             # continue
         # breakpoint()
+        if index in already:
+            continue
         context = ele['context']
         prompt = text.replace('$DOC$', context.strip())
 
@@ -98,17 +126,17 @@ if __name__ == "__main__":
             prompt = tokenizer.decode(input_ids, skip_special_tokens=True)
 
         choice_question = question.replace('$Q$', ele['question'].strip()).replace('$C_A$', ele['choice_A'].strip()).replace('$C_B$', ele['choice_B'].strip()).replace('$C_C$', ele['choice_C'].strip()).replace('$C_D$', ele['choice_D'].strip())
-        input_ids = tokenizer(system+prompt, return_tensors='pt').to("cuda")
-        question_id = tokenizer(choice_question, return_tensors="pt").to("cuda")
+        input_ids = tokenizer(system+prompt, return_tensors='pt').to(f"cuda:{rank}")
+        question_id = tokenizer(choice_question, return_tensors="pt").to(f"cuda:{rank}")
         _, question_len = question_id['input_ids'].shape
 
-        torch.cuda.synchronize()
-        start = time.time()
+        # torch.cuda.synchronize()
+        # start = time.time()
         # output_base = model.generate(**input_ids, max_new_tokens=max_new_tokens, cache_implementation="offloaded", do_sample=False)
         # prefill
         output_prefill = model.generate(**input_ids, max_new_tokens=1, return_dict_in_generate=True, do_sample=False)
-        torch.cuda.synchronize()
-        prefill_end = time.time()
+        # torch.cuda.synchronize()
+        # prefill_end = time.time()
         # decoding
         input_ids['input_ids'] = torch.cat([input_ids['input_ids'], question_id['input_ids']], dim=1)
         input_ids['attention_mask'] = torch.cat([input_ids['attention_mask'], question_id['attention_mask']], dim=1)
@@ -130,10 +158,11 @@ if __name__ == "__main__":
                                     max_new_tokens=max_new_tokens,
                                     past_key_values=output_prefill["past_key_values"],
                                     do_sample=False)
-        response = tokenizer.decode(output_base[0, input_len_base:], skip_special_tokens=True)
-        torch.cuda.synchronize()
-        end = time.time()
-        print("index", index, "prefill time", prefill_end - start, "decode time", end - prefill_end, "\tanswer", ele['answer'], flush=True)
+        response = tokenizer.decode(output_base[0], skip_special_tokens=False)
+        response = response.split('<|im_start|>assistant\n<think>\n\n</think>\n\n')[1]
+        # torch.cuda.synchronize()
+        # end = time.time()
+        # print("index", index, "prefill time", prefill_end - start, "decode time", end - prefill_end, "\tanswer", ele['answer'], flush=True)
         print("response org", response, flush=True)
         print("-------------------------------------------------------", flush=True)
         with open(args.result_file, "a", encoding="utf-8") as f:
